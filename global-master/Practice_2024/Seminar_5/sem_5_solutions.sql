@@ -189,3 +189,39 @@ JOIN
     sem_5.product_groups g ON changes.group_id = g.group_id
 GROUP BY 
     g.group_id;
+
+
+-- 16. Рассчитайте долю каждого продукта от суммарной цены группы и сравните с долей предыдущего продукта в группе.
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.price,
+    g.group_name,
+    p.price / SUM(p.price) OVER (PARTITION BY p.group_id) AS market_share,
+    LAG(p.price / SUM(p.price) OVER (PARTITION BY p.group_id)) OVER (PARTITION BY p.group_id ORDER BY p.product_id) AS previous_market_share,
+    (p.price / SUM(p.price) OVER (PARTITION BY p.group_id)) - LAG(p.price / SUM(p.price) OVER (PARTITION BY p.group_id)) 
+    OVER (PARTITION BY p.group_id ORDER BY p.product_id) AS change_in_share
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id;
+
+
+-- 17. Рассчитайте скользящее среднее цен для каждого продукта с учетом трех предыдущих и текущей строки в рамках своей группы.
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.price,
+    g.group_name,
+    AVG(p.price) OVER (
+        PARTITION BY p.group_id 
+        ORDER BY p.price 
+        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+    ) AS moving_avg_price
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id;
+
