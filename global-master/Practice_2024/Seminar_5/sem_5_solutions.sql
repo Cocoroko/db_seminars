@@ -2,8 +2,46 @@
 
 -- 1. Создать таблицу и заполнить ее данными согласно скрипту.
 
+-- 2. Подсчитать количество продуктов в каждой группе и приставить это значение к результатам запроса.
 
--- 2. Вывести все товары и среднюю цену товара в каждой из категорий в отдельном столбце. Ответ округлить до целого
+SELECT 
+    p.product_id,
+    p.product_name,
+    g.group_name,
+    COUNT(p.product_id) OVER (PARTITION BY p.group_id) as total_products_in_group
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id;
+
+-- 3. Найдите цену следующего продукта в группе, чтобы оценить изменения цен в рамках каждой группы продуктов.
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.price,
+    g.group_name,
+    LEAD(p.price) OVER (PARTITION BY p.group_id ORDER BY p.price) AS next_price_in_group
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id;
+
+-- 4. Определите процент отклонения цены каждого продукта от максимальной цены в своей группе.
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.price,
+    g.group_name,
+    MAX(p.price) OVER (PARTITION BY p.group_id) AS max_price_in_group,
+    100.0 * (p.price / MAX(p.price) OVER (PARTITION BY p.group_id)) AS percent_of_max_price
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id;
+
+-- 5. Выведите все товары и среднюю цену товара в каждой из групп в отдельном столбце. Ответ округлите до целого
 
 select p.product_id, p.product_name
      , pg.group_name
@@ -12,36 +50,7 @@ select p.product_id, p.product_name
   join sem_5.product_groups pg
     on p.group_id = pg.group_id;
 
--- 3. Вывести номер товара в порядке возрастания цены в каждой группе. (т.е. нумерация отдельная для каждой группы)
-
- select p.product_id, p.product_name
-     , pg.group_name, p.price
-     , row_number() over(partition by p.group_id order by p.price asc)
-  from sem_5.products p
-  join sem_5.product_groups pg
-    on p.group_id = pg.group_id;
-
--- 4. Повторить предыдущий шаг, но товары с одинаковой ценой должны иметь одинаковый порядковый номер.
-
- select p.product_id, p.product_name
-     , pg.group_name, p.price
-     , dense_rank() over(partition by p.group_id order by p.price asc)
-     , rank() over(partition by p.group_id order by p.price asc)
-  from sem_5.products p
-  join sem_5.product_groups pg
-    on p.group_id = pg.group_id;
- 
-
--- 5. Вывести для каждого товара разность его цены с предыдущим в одной товарной категории.
-
-select p.product_id, p.product_name
-     , pg.group_name, p.price
-     , p.price - lag(p.price, 1) over(partition by p.group_id order by p.price) as price_diff
-  from sem_5.products p
-  join sem_5.product_groups pg
-    on p.group_id = pg.group_id;
-
--- 6. Найти самый дешевый продукт в каждой группе и сопоставить его цену с ценами других продуктов.
+-- 6. Найдите самый дешевый продукт в каждой группе и сопоставьте его цену с ценами других продуктов.
 
 SELECT 
     p.product_id,
@@ -54,8 +63,38 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
+-- 7. Вывести номер товара в порядке возрастания цены в каждой группе. (т.е. нумерация отдельная для каждой группы)
 
--- 7. Создайте запрос, который анализирует тренд изменения цен для каждого продукта в группе и определяет, увеличивается ли цена, уменьшается, или остается неизменной, сравнивая с предыдущей ценой.
+ select p.product_id, p.product_name
+     , pg.group_name, p.price
+     , row_number() over(partition by p.group_id order by p.price asc)
+  from sem_5.products p
+  join sem_5.product_groups pg
+    on p.group_id = pg.group_id;
+
+-- 8. Повторить предыдущий шаг, но товары с одинаковой ценой должны иметь одинаковый порядковый номер.
+
+ select p.product_id, p.product_name
+     , pg.group_name, p.price
+     , dense_rank() over(partition by p.group_id order by p.price asc)
+     , rank() over(partition by p.group_id order by p.price asc)
+  from sem_5.products p
+  join sem_5.product_groups pg
+    on p.group_id = pg.group_id;
+ 
+
+-- 9. Вывести для каждого товара разность его цены с предыдущим в одной товарной категории.
+
+select p.product_id, p.product_name
+     , pg.group_name, p.price
+     , p.price - lag(p.price, 1) over(partition by p.group_id order by p.price) as price_diff
+  from sem_5.products p
+  join sem_5.product_groups pg
+    on p.group_id = pg.group_id;
+
+
+-- 10. Создайте запрос, который анализирует тренд изменения цен для каждого продукта в группе и определяет, увеличивается ли цена, уменьшается, или остается неизменной, сравнивая с предыдущей ценой.
+
 SELECT 
     p.product_id,
     p.product_name,
@@ -72,7 +111,7 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
---8. Для каждого продукта укажите, есть ли в группе продукт с более высокой ценой.
+-- 11. Для каждого продукта укажите, есть ли в группе продукт с более высокой ценой.
 
 SELECT 
     p.product_id,
@@ -88,19 +127,7 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
---9. Подсчитать количество продуктов в каждой группе и приставить это значение к результатам запроса.
-
-SELECT 
-    p.product_id,
-    p.product_name,
-    g.group_name,
-    COUNT(p.product_id) OVER (PARTITION BY p.group_id) as total_products_in_group
-FROM 
-    sem_5.products p
-JOIN 
-    sem_5.product_groups g ON p.group_id = g.group_id;
-
--- 10. Вычислить накопительную сумму цен продуктов в каждой группе на основе цены.
+-- 12. Вычислить накопительную сумму цен продуктов в каждой группе на основе цены.
 
 SELECT 
     p.product_id,
@@ -115,21 +142,7 @@ JOIN
 ORDER BY 
     g.group_name, p.price;
 
--- 11. Используя функцию LEAD, найдите цену следующего продукта в группе, чтобы оценить изменения цен в рамках каждой группы продуктов.
-
-
-SELECT 
-    p.product_id,
-    p.product_name,
-    p.price,
-    g.group_name,
-    LEAD(p.price) OVER (PARTITION BY p.group_id ORDER BY p.price) AS next_price_in_group
-FROM 
-    sem_5.products p
-JOIN 
-    sem_5.product_groups g ON p.group_id = g.group_id;
-
--- 12. Для оценки изменения цен продуктов используем LAG и LEAD функции, анализируя, как изменяется цена по сравнению с предыдущей и следующей ценой того же продукта.
+-- 13. Для оценки изменения цен продуктов используем LAG и LEAD функции, анализируя, как изменяется цена по сравнению с предыдущей и следующей ценой того же продукта.
 
 SELECT 
     p.product_id,
@@ -140,7 +153,7 @@ SELECT
 FROM 
     sem_5.products p;
 
--- 13. Для каждого продукта в группе вычислите отклонение от средней цены продуктов в этой группе при помощи оконных функций.
+-- 14. Для каждого продукта в группе вычислите отклонение от средней цены продуктов в этой группе при помощи оконных функций.
 
 SELECT 
     p.product_id,
@@ -154,18 +167,15 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 14.  Оценка динамики изменения цен. Отслеживание тенденции изменения цен для оценки общего направления изменения цен в группе (например, тренд к увеличению или уменьшению).
+-- 15.  Оценка динамики изменения цен. Отслеживание тенденции изменения цен для оценки общего направления изменения цен в группе (например, тренд к увеличению или уменьшению).
 
-...SELECT 
+SELECT 
     g.group_name,
     SUM(CASE WHEN price_change > 0 THEN 1 ELSE 0 END) AS increases,
     SUM(CASE WHEN price_change < 0 THEN 1 ELSE 0 END) AS decreases,
     CASE 
         WHEN SUM(price_change) > 0 THEN 'Overall Increase'
-        WHEN SUM(price_change) < 0 THEN 'Overall
-
-
-Decrease'
+        WHEN SUM(price_change) < 0 THEN 'Overall Decrease'
         ELSE 'No Overall Change'
     END AS overall_trend
 FROM (
@@ -179,5 +189,3 @@ JOIN
     sem_5.product_groups g ON changes.group_id = g.group_id
 GROUP BY 
     g.group_id;
-
-     
