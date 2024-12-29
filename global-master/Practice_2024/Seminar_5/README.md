@@ -4,7 +4,8 @@
 * Принимают в качестве аргумента столбец промежуточного результата вычисления и возвращают тоже столбец.
 * Местом их использования могут быть только разделы ORDER BY и SELECT, выполняющие завершающую обработку логического промежуточного результата.
 * Действуют подобно агрегатным функциям, но не уменьшают степень детализации.
-* Агрегируют данные порциями, количество и размер которых регулируется специальной синтаксической конструкцией. 
+* Агрегируют данные порциями, количество и размер которых регулируется специальной синтаксической конструкцией.
+  
 ### Синтаксис
 ``` sql
 function_name(expression) OVER (
@@ -237,4 +238,5 @@ SELECT sum(salary) OVER w
 * [Оконные функции](https://postgrespro.ru/docs/postgresql/14/functions-window)
 * [Агрегатные функции](https://postgrespro.ru/docs/postgresql/14/functions-aggregate)
 * [Вызовы оконных функций](https://postgrespro.ru/docs/postgresql/14/sql-expressions#SYNTAX-WINDOW-FUNCTIONS)
+* [Оконные функции](https://romansimakov-reddatabasesqlbook.readthedocs.io/ru/latest/20_WindowFunctions.html)
 
