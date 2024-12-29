@@ -92,25 +92,7 @@ JOIN
   join sem_5.product_groups pg
     on p.group_id = pg.group_id;
 
--- 10. Создайте запрос, который анализирует тренд изменения цен для каждого продукта в группе и определяет, увеличивается ли цена, уменьшается, или остается неизменной, сравнивая с предыдущей ценой.
-
-SELECT 
-    p.product_id,
-    p.product_name,
-    p.price,
-    g.group_name,
-    CASE 
-        WHEN LAG(p.price) OVER (PARTITION BY p.group_id ORDER BY p.price) IS NULL THEN 'N/A'
-        WHEN p.price > LAG(p.price) OVER (PARTITION BY p.group_id ORDER BY p.price) THEN 'Increasing'
-        WHEN p.price < LAG(p.price) OVER (PARTITION BY p.group_id ORDER BY p.price) THEN 'Decreasing'
-        ELSE 'Constant'
-    END AS price_trend
-FROM 
-    sem_5.products p
-JOIN 
-    sem_5.product_groups g ON p.group_id = g.group_id;
-
--- 11. Для каждого продукта укажите, есть ли в группе продукт с более высокой ценой.
+-- 10. Для каждого продукта укажите, есть ли в группе продукт с более высокой ценой.
 
 SELECT 
     p.product_id,
@@ -126,7 +108,7 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 12. Вычислите накопительную сумму цен продуктов в каждой группе.
+-- 11. Вычислите накопительную сумму цен продуктов в каждой группе.
 
 SELECT 
     p.product_id,
@@ -141,7 +123,7 @@ JOIN
 ORDER BY 
     g.group_name, p.price;
 
--- 13. Рассчитайте долю каждого продукта от суммарной цены группы и сравните с долей предыдущего продукта в группе.
+-- 12. Рассчитайте долю каждого продукта от суммарной цены группы и сравните с долей предыдущего продукта в группе.
 
 SELECT 
     p.product_id,
@@ -157,7 +139,7 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 14. Рассчитайте скользящее среднее цен для каждого продукта с учетом трех предыдущих и текущей строки в рамках своей группы.
+-- 13. Рассчитайте скользящее среднее цен для каждого продукта с учетом трех предыдущих и текущей строки в рамках своей группы.
 
 SELECT 
     p.product_id,
