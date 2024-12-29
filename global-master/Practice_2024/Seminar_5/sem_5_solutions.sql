@@ -156,3 +156,29 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
+-- 14. Выведите информацию о том, как цена каждого продукта соотносится со средней ценой в своей группе, и посчитайте общее количество таких продуктов выше средней цены.
+
+SELECT 
+    g.group_name,
+    p.product_id,
+    p.product_name,
+    p.price,
+    AVG(p.price) OVER (PARTITION BY p.group_id) AS avg_price_in_group,
+    CASE 
+        WHEN p.price > AVG(p.price) OVER (PARTITION BY p.group_id) THEN 1 
+        ELSE 0 
+    END AS above_avg_flag,
+    SUM(CASE 
+            WHEN p.price > AVG(p.price) OVER (PARTITION BY p.group_id) THEN 1 
+            ELSE 0 
+        END) 
+    OVER (PARTITION BY g.group_name) AS count_above_avg
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id
+GROUP BY 
+    g.group_name, p.product_id, p.product_name, p.price;
+
+
+
