@@ -14,7 +14,16 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 3. Найдите цену следующего продукта в группе, чтобы оценить изменения цен в рамках каждой группы продуктов.
+-- 3. Выведите все товары и среднюю цену товара в каждой из групп в отдельном столбце. Ответ округлите до целого
+
+select p.product_id, p.product_name
+     , pg.group_name
+     , round(avg(p.price) over(partition by p.group_id), 0) as avg_price
+  from sem_5.products p
+  join sem_5.product_groups pg
+    on p.group_id = pg.group_id;
+
+-- 4. Найдите цену следующего продукта (в порядке сортировки по цене) в группе, чтобы оценить изменения цен в рамках каждой группы продуктов.
 
 SELECT 
     p.product_id,
@@ -27,25 +36,12 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 4. Определите процент отклонения цены каждого продукта от максимальной цены в своей группе.
 
-SELECT 
-    p.product_id,
-    p.product_name,
-    p.price,
-    g.group_name,
-    MAX(p.price) OVER (PARTITION BY p.group_id) AS max_price_in_group,
-    100.0 * (p.price / MAX(p.price) OVER (PARTITION BY p.group_id)) AS percent_of_max_price
-FROM 
-    sem_5.products p
-JOIN 
-    sem_5.product_groups g ON p.group_id = g.group_id;
-
--- 5. Выведите все товары и среднюю цену товара в каждой из групп в отдельном столбце. Ответ округлите до целого
+-- 5. Выведите для каждого товара разность его цены с предыдущим в одной товарной категории.
 
 select p.product_id, p.product_name
-     , pg.group_name
-     , round(avg(p.price) over(partition by p.group_id), 0) as avg_price
+     , pg.group_name, p.price
+     , p.price - lag(p.price, 1) over(partition by p.group_id order by p.price) as price_diff
   from sem_5.products p
   join sem_5.product_groups pg
     on p.group_id = pg.group_id;
@@ -63,7 +59,21 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 7. Вывести номер товара в порядке возрастания цены в каждой группе. (т.е. нумерация отдельная для каждой группы)
+-- 7. Определите процент отклонения цены каждого продукта от максимальной цены в своей группе.
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.price,
+    g.group_name,
+    MAX(p.price) OVER (PARTITION BY p.group_id) AS max_price_in_group,
+    100.0 * (p.price / MAX(p.price) OVER (PARTITION BY p.group_id)) AS percent_of_max_price
+FROM 
+    sem_5.products p
+JOIN 
+    sem_5.product_groups g ON p.group_id = g.group_id;
+
+-- 8. Выведите номер товара в порядке возрастания цены в каждой группе. (т.е. нумерация отдельная для каждой группы)
 
  select p.product_id, p.product_name
      , pg.group_name, p.price
@@ -72,7 +82,7 @@ JOIN
   join sem_5.product_groups pg
     on p.group_id = pg.group_id;
 
--- 8. Повторите предыдущий шаг, но товары с одинаковой ценой должны иметь одинаковый порядковый номер.
+-- 9. Повторите предыдущий шаг, но товары с одинаковой ценой должны иметь одинаковый порядковый номер.
 
  select p.product_id, p.product_name
      , pg.group_name, p.price
@@ -81,17 +91,6 @@ JOIN
   from sem_5.products p
   join sem_5.product_groups pg
     on p.group_id = pg.group_id;
- 
-
--- 9. Выведите для каждого товара разность его цены с предыдущим в одной товарной категории.
-
-select p.product_id, p.product_name
-     , pg.group_name, p.price
-     , p.price - lag(p.price, 1) over(partition by p.group_id order by p.price) as price_diff
-  from sem_5.products p
-  join sem_5.product_groups pg
-    on p.group_id = pg.group_id;
-
 
 -- 10. Создайте запрос, который анализирует тренд изменения цен для каждого продукта в группе и определяет, увеличивается ли цена, уменьшается, или остается неизменной, сравнивая с предыдущей ценой.
 
@@ -127,7 +126,7 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
--- 12. Вычислить накопительную сумму цен продуктов в каждой группе на основе цены.
+-- 12. Вычислите накопительную сумму цен продуктов в каждой группе.
 
 SELECT 
     p.product_id,
@@ -142,56 +141,7 @@ JOIN
 ORDER BY 
     g.group_name, p.price;
 
--- 13. Для оценки изменения цен продуктов используйте LAG и LEAD функции, анализируя, как изменяется цена по сравнению с предыдущей и следующей ценой того же продукта.
-
-SELECT 
-    p.product_id,
-    p.product_name,
-    p.price,
-    LAG(p.price) OVER (PARTITION BY p.product_id ORDER BY p.product_id) AS previous_price,
-    LEAD(p.price) OVER (PARTITION BY p.product_id ORDER BY p.product_id) AS next_price
-FROM 
-    sem_5.products p;
-
--- 14. Для каждого продукта в группе вычислите отклонение от средней цены продуктов в этой группе при помощи оконных функций.
-
-SELECT 
-    p.product_id,
-    p.product_name,
-    p.price,
-    g.group_name,
-    AVG(p.price) OVER (PARTITION BY p.group_id) AS avg_price_in_group,
-    p.price - AVG(p.price) OVER (PARTITION BY p.group_id) AS deviation_from_avg
-FROM 
-    sem_5.products p
-JOIN 
-    sem_5.product_groups g ON p.group_id = g.group_id;
-
--- 15.  Оценка динамики изменения цен. Отследите тенденции изменения цен для оценки общего направления изменения цен в группе (например, тренд к увеличению или уменьшению).
-
-SELECT 
-    g.group_name,
-    SUM(CASE WHEN price_change > 0 THEN 1 ELSE 0 END) AS increases,
-    SUM(CASE WHEN price_change < 0 THEN 1 ELSE 0 END) AS decreases,
-    CASE 
-        WHEN SUM(price_change) > 0 THEN 'Overall Increase'
-        WHEN SUM(price_change) < 0 THEN 'Overall Decrease'
-        ELSE 'No Overall Change'
-    END AS overall_trend
-FROM (
-    SELECT 
-        p.group_id,
-        p.price - LAG(p.price) OVER (PARTITION BY p.group_id ORDER BY p.product_id) AS price_change
-    FROM 
-        sem_5.products p
-) AS changes
-JOIN 
-    sem_5.product_groups g ON changes.group_id = g.group_id
-GROUP BY 
-    g.group_id;
-
-
--- 16. Рассчитайте долю каждого продукта от суммарной цены группы и сравните с долей предыдущего продукта в группе.
+-- 13. Рассчитайте долю каждого продукта от суммарной цены группы и сравните с долей предыдущего продукта в группе.
 
 SELECT 
     p.product_id,
@@ -207,8 +157,7 @@ FROM
 JOIN 
     sem_5.product_groups g ON p.group_id = g.group_id;
 
-
--- 17. Рассчитайте скользящее среднее цен для каждого продукта с учетом трех предыдущих и текущей строки в рамках своей группы.
+-- 14. Рассчитайте скользящее среднее цен для каждого продукта с учетом трех предыдущих и текущей строки в рамках своей группы.
 
 SELECT 
     p.product_id,
